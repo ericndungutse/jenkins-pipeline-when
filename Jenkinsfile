@@ -1,8 +1,8 @@
 pipeline {
     agent any
     
-    environment {
-         WEBSERVER = "Nginx"
+    environment{
+        WEBSERVER = "nginx"
     }
     stages {
         stage('Create  directory for the WEB Application')
@@ -10,36 +10,41 @@ pipeline {
             steps{
                
                 //Fisrt, drop the directory if exists
-                sh 'rm -rf /home/jenkins/app-web'
+                bat ''' if exist C:\\jenkins\\app-web rd /s /q C:\\jenkins\\app-web (
+                     'rmdir /s /q C:\\jenkins\\app-web'
+                ) '''
+                
                 //Create the directory
-                sh 'mkdir /home/jenkins/app-web'
+                bat 'mkdir C:\\jenkins\\app-web'
                 
             }
         }
         stage('Drop the container'){
             steps {
             echo 'droping the container...'
-            sh 'docker rm -f app-web'
+            bat 'docker rm -f app-web'
             }
         }
         // Apache Webserver
         stage('Create the Apache container') {
+
             when {
-                 environment name: 'WEBSERVER', value: 'Apache'
+                environment name : 'WEBSERVER', value: 'Apache', ensureCase: false
             }
+          
             steps {
             echo 'Creating the container...'
-            sh 'docker run -dit --name app-web -p 9100:80  -v /home/jenkins/app-web:/usr/local/apache2/htdocs/ httpd'
+            bat 'docker run -dit --name app-web -p 9100:80  -v C:\\jenkins\\app-web:/usr/local/apache2/htdocs/ httpd'
             }
         }
         //Nginx webserver
         stage('Create the Nginx container') {
             when {
-                 environment name: 'WEBSERVER', value: 'Nginx'
+                 environment name: 'WEBSERVER', value: 'Nginx', ensureCase: false
             }
             steps {
             echo 'Creating the container...'
-            sh 'docker run -dit --name app-web -p 9100:80  -v /home/jenkins/app-web:/usr/share/nginx/html nginx'
+            bat 'docker run -dit --name app-web -p 9100:80  -v C:\\jenkins\\app-web:/usr/share/nginx/html nginx'
          
             }
         }
@@ -48,7 +53,7 @@ pipeline {
         stage('Copy the web application to the container directory') {
             steps {
                 echo 'Copying web application...'             
-                sh 'cp -r web/* /home/jenkins/app-web'
+                bat 'xcopy /E /I /Y web\\* C:\\jenkins\\app-web'
             }
         }
     }
