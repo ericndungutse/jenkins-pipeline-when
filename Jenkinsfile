@@ -29,7 +29,7 @@ pipeline {
         stage('Create the Apache container') {
 
             when {
-                environment name : 'WEBSERVER', value: 'Apache', ensureCase: false
+                environment name : 'WEBSERVER', value: 'Apache'
             }
           
             steps {
@@ -40,7 +40,7 @@ pipeline {
         //Nginx webserver
         stage('Create the Nginx container') {
             when {
-                 environment name: 'WEBSERVER', value: 'Nginx', ensureCase: false
+                 environment name: 'WEBSERVER', value: 'Nginx'
             }
             steps {
             echo 'Creating the container...'
