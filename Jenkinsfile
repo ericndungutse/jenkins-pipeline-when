@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment{
-        WEBSERVER = "nginx"
+        WEBSERVER = "Nginx"
     }
     stages {
         stage('Create  directory for the WEB Application')
@@ -10,9 +10,11 @@ pipeline {
             steps{
                
                 //Fisrt, drop the directory if exists
-                bat ''' if exist C:\\jenkins\\app-web rd /s /q C:\\jenkins\\app-web (
-                     'rmdir /s /q C:\\jenkins\\app-web'
-                ) '''
+                bat '''
+                if exist "C:\\jenkins\\app-web" (
+                     rmdir /s /q C:\\jenkins\\app-web
+                )
+                '''
                 
                 //Create the directory
                 bat 'mkdir C:\\jenkins\\app-web'
