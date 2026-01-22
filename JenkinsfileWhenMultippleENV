@@ -1,0 +1,128 @@
+
+pipeline {
+    agent any
+
+    parameters {
+        choice choices: ['Apache', 'Nginx'], name: 'WEBSERVER'
+        choice choices: ['Development', 'Production', 'Test'], name: 'ENV'
+    }
+    stages {
+        stage('Create  directory for the WEB Application'){
+            // Create it only once
+            when {
+                equals(actual: currentBuild.number, expected: 1)
+            }
+
+            steps {
+   
+                bat 'rmdir /s /q C:\\jenkins\\app-web'
+                //Create the directory
+                bat 'mkdir C:\\jenkins\\app-web'
+            }
+        }
+
+        stage('Drop the container') {
+            steps {
+                echo 'droping the container...'
+                bat 'docker rm -f app-web'
+            }
+        }
+
+        // Apache Webserver
+        stage('Create the Apache container in Development') {
+            when {
+                allOf {
+                environment name : 'WEBSERVER', value: 'Apache'
+                environment name : 'ENV', value: 'Development'
+                }
+            }
+
+            steps {
+                echo 'Creating the container...'
+                bat 'docker run -dit --name app-web -p 9100:80  -v C:\\jenkins\\app-web:/usr/local/apache2/htdocs/ httpd'
+            }
+        }
+
+        //Nginx webserver
+        stage('Create the Nginx container in Test') {
+            when {
+                allOf {
+                environment name : 'WEBSERVER', value: 'Nginx'
+                environment name : 'ENV', value: 'Test'
+                }
+            }
+            steps {
+                echo 'Creating the container...'
+                bat 'docker run -dit --name app-web -p 9100:80  -v C:\\jenkins\\app-web:/usr/share/nginx/html nginx'
+            }
+        }
+
+        // Nginx in production
+        stage('Create the Nginx container in Production') {
+            when {
+                allOf {
+                environment name : 'WEBSERVER', value: 'Nginx'
+                environment name : 'ENV', value: 'Production'
+                }
+            }
+            steps {
+                echo 'Creating the container...'
+                bat 'docker run -dit --name app-web -p 9100:80  -v C:\\jenkins\\app-web:/usr/share/nginx/html nginx'
+            }
+        }
+
+        stage("Error message nginx"){
+            when {
+                allOf {
+                    environment name : 'WEBSERVER', value: 'Nginx'
+                    environment name : 'ENV', value: 'Development'
+                }
+            }
+
+            steps{
+                echo "Nginx can be deployed only in Test or Production environments"
+            }
+        }
+
+        stage("Error message apache"){
+            when {
+                allOf{
+                        environment name : 'WEBSERVER', value: 'Apache'
+                        anyOf {
+                            environment name : 'ENV', value: 'Production'
+                            environment name : 'ENV', value: 'Test'
+                        }
+                }
+            }
+
+            steps{
+                echo "Apache can be deployed only in Development environment"
+            }
+        }
+
+
+        stage('Copy the web application to the container directory') {
+            steps {
+                echo 'Copying web application...'
+                bat 'xcopy /E /I /Y web\\* C:\\jenkins\\app-web'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'These steps are always executed'
+        }
+
+        success {
+            // One or more steps need to be included within each condition's block.
+            echo 'the deployment has worked'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'web/*', followSymlinks: false
+            cleanWs()
+        }
+        failure {
+            // One or more steps need to be included within each condition's block.
+            echo 'An error has ocurred'
+        }
+    }
+}
